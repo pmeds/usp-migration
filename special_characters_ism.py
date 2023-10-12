@@ -17,7 +17,7 @@ logging.basicConfig(filename='process_logs.log', level=logging.INFO, format='%(a
 MP4_DIR = "/home/admin/scripts/mp4s/good-mp4s"
 ISM_OUTPUT_DIR = "/home/admin/scripts/ism/output"
 LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
-UPLOAD_BUCKET_NAME = "webmd-usp-poc-content-1"
+UPLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
 DOWNLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
 
 # Configure boto3 for Linode Object Storage
@@ -27,8 +27,10 @@ download_session = boto3.Session(
 )
 download_client = download_session.client('s3', region_name='us-ord-1', endpoint_url='https://us-ord-1.linodeobjects.com')
 
+# The function is repeated in case it is being downloaded from one bucket, and then upload to a different one.
+# Remember to updat the variables for both buckets.
 upload_session = boto3.Session(
-    aws_access_key_id=os.environ['POC_S3_ACCESS_KEY'],
+    aws_access_key_id=os.environ['S3_ACCESS_KEY'],
     aws_secret_access_key=os.environ['POC_S3_SECRET_KEY']
 )
 upload_client = upload_session.client('s3', region_name='us-ord-1', endpoint_url='https://us-ord-1.linodeobjects.com')
