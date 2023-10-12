@@ -51,7 +51,7 @@ def decode_and_reencode_filename(url):
 def create_csv_from_json(json_file):
     with open(json_file, 'r') as f:
         data = json.load(f)
-        filtered_data = [entry for entry in json_data if entry.get("Name", "").endswith(".mp4")]
+        filtered_data = [entry for entry in data if entry.get("Name", "").endswith(".mp4")]
         df = pd.json_normalize(filtered_data)
         csv_path = "output.csv"
         df.to_csv(csv_path, index=False)
