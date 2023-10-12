@@ -48,22 +48,41 @@ def generate_manifest(file_group, command_filename, json_entry):
     except subprocess.CalledProcessError:
         logging.error(json.dumps(json_entry))
 
+def serialize_without_ns(element):
+    """Serializes the XML element without namespace prefixes."""
+    from xml.etree.ElementTree import tostring
+    from xml.dom.minidom import parseString
+
+    rough_string = tostring(element).decode()
+    reparsed = parseString(rough_string)
+    for node in reparsed.getElementsByTagName('*'):
+        node.tagName = node.tagName.split(':')[-1]
+        node.nodeName = node.nodeName.split(':')[-1]
+    return reparsed.toxml()
+
 def modify_ism_to_relative_path(ism_filename):
     ism_file_path = os.path.join(OUTPUT_DIR, ism_filename)
     tree = ET.parse(ism_file_path)
     root = tree.getroot()
 
-    for audio in root.findall(".//{http://www.w3.org/2001/SMIL20/Language}audio"):
-        src = audio.get('src')
+    # Function to update src attribute
+    def update_src(element):
+        src = element.get('src')
         if src:
-            audio.set('src', os.path.basename(src).replace('%20', ' '))
+            new_src = os.path.basename(src).replace('%20', ' ')
+            element.set('src', new_src)
+
+    # Find the <audio> and <video> tags and extract the file names
+    for audio in root.findall(".//{http://www.w3.org/2001/SMIL20/Language}audio"):
+        update_src(audio)
 
     for video in root.findall(".//{http://www.w3.org/2001/SMIL20/Language}video"):
-        src = video.get('src')
-        if src:
-            video.set('src', os.path.basename(src).replace('%20', ' '))
+        update_src(video)
 
-    tree.write(ism_file_path)
+    # Save the modified XML content back to the same .ism file without namespace prefixes
+    with open(ism_file_path, 'w') as f:
+        xml_str = serialize_without_ns(root)
+        f.write(xml_str)
 
 def upload_manifest_to_bucket(filename_prefix, mp4_files, bucket_name):
     command_filename = f"{OUTPUT_DIR}/{filename_prefix}.ism"
