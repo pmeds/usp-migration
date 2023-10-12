@@ -31,7 +31,7 @@ download_client = download_session.client('s3', region_name='us-ord-1', endpoint
 # Remember to updat the variables for both buckets.
 upload_session = boto3.Session(
     aws_access_key_id=os.environ['S3_ACCESS_KEY'],
-    aws_secret_access_key=os.environ['POC_S3_SECRET_KEY']
+    aws_secret_access_key=os.environ['S3_SECRET_KEY']
 )
 upload_client = upload_session.client('s3', region_name='us-ord-1', endpoint_url='https://us-ord-1.linodeobjects.com')
 
