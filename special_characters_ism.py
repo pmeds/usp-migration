@@ -56,14 +56,6 @@ def create_csv_from_json(json_file):
         df.to_csv(csv_path, index=False)
         return csv_path
 
-def split_csv(csv_path, chunk_size):
-    chunks = []
-    for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-        output_path = f"chunk_{len(chunks)}.csv"
-        chunk.to_csv(output_path, index=False)
-        chunks.append(output_path)
-    return sorted(chunks, key=lambda x: int(x.split('_')[-1].split('.')[0]))
-
 def download_from_linode(file_key, local_path):
     # Use the decode and reencode function to process URL
     encoded_file_key = decode_and_reencode_filename(file_key)
