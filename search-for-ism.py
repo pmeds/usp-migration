@@ -1,7 +1,7 @@
 import json
 
 # Load the JSON data
-with open('new_all_linode.json', 'r') as json_file:
+with open('your_json_data.json', 'r') as json_file:
     data = json.load(json_file)
 
 # Create a dictionary to store groups
@@ -37,10 +37,12 @@ for group_key, group_data in groups.items():
 
 # Write missing pairs to another JSON file without formatting
 with open('missing_pairs.json', 'w') as missing_file:
-    for item in missing_pairs:
-        missing_file.write(json.dumps(item) + ',\n')
+    for i, item in enumerate(missing_pairs):
+        missing_file.write(json.dumps(item))
+        if i < len(missing_pairs) - 1:
+            missing_file.write(',')
 
 # Optionally, you can print the missing pairs for reference
 print("Missing ism files:")
 for item in missing_pairs:
-    print(json.dumps(item, separators=(',', ':')))
+    print(json.dumps(item))
