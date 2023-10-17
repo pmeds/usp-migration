@@ -26,6 +26,11 @@ upload_session = boto3.Session(
 )
 upload_client = upload_session.client('s3', region_name='us-ord-1', endpoint_url='https://us-ord-1.linodeobjects.com')
 
+# Function to extract the S3 upload path from CSV data
+def extract_upload_path(csv_row):
+    # Assuming that 'Path' in the CSV contains the full S3 path
+    return csv_row['Path']
+
 def decode_and_reencode_filename(url):
     # Split the URL to get the path
     path = urllib.parse.urlparse(url).path
