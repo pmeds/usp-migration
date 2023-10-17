@@ -191,6 +191,8 @@ def process_single_key_group(group_df):
     for input_file_path in mp4_local_paths:
         output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
         run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
+        # Upload MP4 files ] to Linode using the S3 upload path
+        upload_mp4_to_linode_boto3(os.path.join(s3_upload_path, os.path.basename(input_file_path)), input_file_path)
 
     # Generate ISM after mp4split
     generate_ism(mp4_local_paths)
@@ -228,6 +230,9 @@ def main():
     for key in unique_keys:
         group_df = df[df['key'] == key]
 
+        # Extract the S3 upload path from the first row in the group
+        s3_upload_path = extract_upload_path(group_df.iloc[0])
+
         # 1. Download MP4 files from Akamai
         mp4_local_paths = []
         for _, row in group_df.iterrows():
@@ -244,7 +249,7 @@ def main():
         #generate_ism(mp4_local_paths)
 
         # 4. Process the group of MP4 files
-        process_single_key_group(group_df)
+        process_single_key_group(group_df, s3_upload_path)
 
 if __name__ == "__main__":
     main()
