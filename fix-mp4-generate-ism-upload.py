@@ -137,11 +137,15 @@ def generate_upload_path(mp4_path, ism_filename):
     return os.path.join(dir_path, ism_filename)
 
 def upload_to_linode(file_key, local_path):
-    try:
-        upload_client.upload_file(local_path, UPLOAD_BUCKET_NAME, file_key)
-        logging.info(f"Successfully uploaded {local_path} to {file_key}")
-    except Exception as e:
-        logging.error(f"Error uploading {local_path}. Reason: {e}")
+    if os.path.exists(local_path):
+        try:
+            upload_client.upload_file(local_path, UPLOAD_BUCKET_NAME, file_key)
+            logging.info(f"Successfully uploaded {local_path} to {file_key}")
+        except Exception as e:
+            logging.error(f"Error uploading {local_path}. Reason: {e}")
+    else:
+        logging.error(f"File not found: {local_path}")
+
 
 def clean_directory(directory_path):
     print("Cleaning good-mp4s directory")
