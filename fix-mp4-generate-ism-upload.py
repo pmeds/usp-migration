@@ -241,7 +241,7 @@ def main():
             run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
 
         # 3. Generate ISM after mp4split
-        generate_ism(mp4_local_paths)
+        #generate_ism(mp4_local_paths)
 
         # 4. Process the group of MP4 files
         process_single_key_group(group_df)
