@@ -194,6 +194,22 @@ def process_single_key_group(group_df):
 
     # Generate ISM after mp4split
     generate_ism(mp4_local_paths)
+    if generate_ism:
+        # Get the correct ISM filename from the first downloaded MP4.
+        ism_filename = generate_ism_filename_from_mp4(os.path.basename(mp4_local_paths[0]))
+
+        # Ensure we have the filename, else skip the iteration.
+        if not ism_filename:
+            logging.error(f"Couldn't derive ISM filename for {mp4_local_paths[0]}")
+            return
+
+        # Modify the ISM to set relative paths.
+        modify_ism_to_relative_path(ism_filename)
+
+        # 3. Upload the ISM file
+        first_mp4_path = group_df.iloc[0]['Path']  # Get the path of the first mp4 from the dataframe
+        upload_path = generate_upload_path(first_mp4_path, ism_filename)  # Derive the upload path
+        upload_to_linode(upload_path, os.path.join(ISM_OUTPUT_DIR, ism_filename))
 
     # Cleanup
     #clean_directory(MP4_DIR)
