@@ -103,11 +103,41 @@ def generate_ism(mp4_local_paths):
         logging.error(f"ISM generation failed for {mp4_local_paths[0]}")
         return False
 
+def modify_ism_to_relative_path(ism_filename):
+    ism_file_path = os.path.join(ISM_OUTPUT_DIR, ism_filename)
+    tree = ET.parse(ism_file_path)
+    root = tree.getroot()
+
+    # Remove the namespaces from the XML file
+    for elem in root.iter():
+        if not hasattr(elem.tag, 'find'): continue  # Skip if it's not an element (like a comment)
+        i = elem.tag.find('}')
+        if i >= 0:
+            elem.tag = elem.tag[i+1:]
+
+    for audio in root.findall(".//audio"):
+        src = audio.get('src')
+        if src:
+            # Decoding the URL to make it human-readable
+            decoded_src = urllib.parse.unquote(src)
+            audio.set('src', os.path.basename(decoded_src))
+
+    for video in root.findall(".//video"):
+        src = video.get('src')
+        if src:
+            # Decoding the URL to make it human-readable
+            decoded_src = urllib.parse.unquote(src)
+            video.set('src', os.path.basename(decoded_src))
+
+    tree.write(ism_file_path, xml_declaration=True)
+
+
 def generate_upload_path(mp4_path, ism_filename):
     dir_path = os.path.dirname(mp4_path)
     return os.path.join(dir_path, ism_filename)
 
 def upload_mp4_to_linode_boto3(file_key, local_path):
+    print(f"Trying to upload {file_key} {local_path}")
     try:
         with open(local_path, 'rb') as file:
             upload_client.upload_fileobj(file, UPLOAD_BUCKET_NAME, file_key)
@@ -125,7 +155,7 @@ def upload_to_linode(file_key, local_path):
         except Exception as e:
             logging.error(f"Error uploading {local_path}. Reason: {e}")
     else:
-        logging.error(f"File not found: {local_path}")
+        logging.error(f"upload_to_linode_ File not found: {local_path}")
         
 def clean_directory(directory_path):
     print("Cleaning good-mp4s directory")
@@ -142,24 +172,32 @@ def process_single_key_group(group_df):
     """
     Process a group of rows from the CSV that share the same key.
     """
-    # 1. Download all MP4s listed in the group.
+    # Create a list to store the downloaded MP4 files
     mp4_local_paths = []
+
     for _, row in group_df.iterrows():
         local_path = os.path.join(MP4_DIR, os.path.basename(row['Path']))
-        download_from_akamai(row['Path'], local_path)
+        
+        # Check if the MP4 file has already been downloaded
+        if not os.path.exists(local_path):
+            download_from_akamai(row['Path'], local_path)
+        
         mp4_local_paths.append(local_path)
 
-    # 2. Run mp4split for each downloaded MP4 and move them to good-mp4s directory
+    # Generate ISM filename once for the group
+    ism_filename = generate_ism_filename_from_mp4(os.path.basename(mp4_local_paths[0]))
+
+    # Run mp4split for each downloaded MP4 and move them to good-mp4s directory
     for input_file_path in mp4_local_paths:
         output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
         run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
 
-    # 3. Generate ISM after mp4split
-    for input_mp4_path in mp4_local_paths:
-        generate_ism([input_mp4_path])
+    # Generate ISM after mp4split
+    generate_ism(mp4_local_paths)
 
     # Cleanup
     #clean_directory(MP4_DIR)
+
 
 def main():
     json_file = "partial-missing-mp4s.json"
