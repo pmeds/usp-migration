@@ -20,7 +20,6 @@ LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
 BASE_URL = "https://webmd-a.akamaihd.net/delivery/"
 UPLOAD_BUCKET_NAME = "webmd-usp-poc-content-1"
 
-
 upload_session = boto3.Session(
     aws_access_key_id=os.environ['POC_S3_ACCESS_KEY'],
     aws_secret_access_key=os.environ['POC_S3_SECRET_KEY']
@@ -63,7 +62,6 @@ def download_from_akamai(file_key, local_path):
     except Exception as e:
         logging.error(f"Error downloading {file_key}. Reason: {e}")
 
-
 def generate_ism_filename_from_mp4(mp4_filename):
     # Use regex to match everything up to the last underscore
     match = re.match(r"^(.*)_.*\.mp4$", mp4_filename)
@@ -72,17 +70,18 @@ def generate_ism_filename_from_mp4(mp4_filename):
         return f"{base_name}.ism"
     return None
 
-
 def run_mp4split(input_file_path, output_file_path, license_key_path):
+    #print(input_file_path)
+    #print(output_file_path)
     mp4split_command = ["mp4split", f"--license-key={license_key_path}", "-o", output_file_path, input_file_path]
     try:
         subprocess.run(mp4split_command, check=True)
         logging.info(f"mp4split successful for: {os.path.basename(input_file_path)}")
         print(f"mp4split successful for: {os.path.basename(input_file_path)}")
-        upload_to_linode(output_file_path, os.path.basename(output_file_path))
+        print(f"uploading for: {os.path.basename(output_file_path)}")
+        upload_mp4_to_linode_boto3(output_file_path, os.path.basename(output_file_path))
     except subprocess.CalledProcessError as e:
         logging.error(f"mp4split failed for: {os.path.basename(input_file_path)}, Error: {e}")
-
 
 def generate_ism(mp4_local_paths):
     # Extract the ISM filename from the first MP4 name
@@ -104,48 +103,17 @@ def generate_ism(mp4_local_paths):
         logging.error(f"ISM generation failed for {mp4_local_paths[0]}")
         return False
 
-def modify_ism_to_relative_path(ism_filename):
-    ism_file_path = os.path.join(ISM_OUTPUT_DIR, ism_filename)
-    tree = ET.parse(ism_file_path)
-    root = tree.getroot()
-
-    # Remove the namespaces from the XML file
-    for elem in root.iter():
-        if not hasattr(elem.tag, 'find'): continue  # Skip if it's not an element (like a comment)
-        i = elem.tag.find('}')
-        if i >= 0:
-            elem.tag = elem.tag[i+1:]
-
-    for audio in root.findall(".//audio"):
-        src = audio.get('src')
-        if src:
-            # Decoding the URL to make it human-readable
-            decoded_src = urllib.parse.unquote(src)
-            audio.set('src', os.path.basename(decoded_src))
-
-    for video in root.findall(".//video"):
-        src = video.get('src')
-        if src:
-            # Decoding the URL to make it human-readable
-            decoded_src = urllib.parse.unquote(src)
-            video.set('src', os.path.basename(decoded_src))
-
-    tree.write(ism_file_path, xml_declaration=True)
-
 def generate_upload_path(mp4_path, ism_filename):
     dir_path = os.path.dirname(mp4_path)
     return os.path.join(dir_path, ism_filename)
 
-def upload_to_linode(file_key, local_path):
-    if os.path.exists(local_path):
-        try:
-            upload_client.upload_file(local_path, UPLOAD_BUCKET_NAME, file_key)
-            logging.info(f"Successfully uploaded {local_path} to {file_key}")
-        except Exception as e:
-            logging.error(f"Error uploading {local_path}. Reason: {e}")
-    else:
-        logging.error(f"File not found: {local_path}")
-
+def upload_mp4_to_linode_boto3(file_key, local_path):
+    try:
+        with open(local_path, 'rb') as file:
+            upload_client.upload_fileobj(file, UPLOAD_BUCKET_NAME, file_key)
+        logging.info(f"Successfully uploaded {local_path} to {file_key}")
+    except Exception as e:
+        logging.error(f"Error uploading {local_path}. Reason: {e}")
 
 def clean_directory(directory_path):
     print("Cleaning good-mp4s directory")
@@ -193,6 +161,23 @@ def main():
 
     for key in unique_keys:
         group_df = df[df['key'] == key]
+
+        # 1. Download MP4 files from Akamai
+        mp4_local_paths = []
+        for _, row in group_df.iterrows():
+            local_path = os.path.join(MP4_DIR, os.path.basename(row['Path']))
+            download_from_akamai(row['Path'], local_path)
+            mp4_local_paths.append(local_path)
+
+        # 2. Run mp4split for each downloaded MP4 and move them to good-mp4s directory
+        for input_file_path in mp4_local_paths:
+            output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
+            run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
+
+        # 3. Generate ISM after mp4split
+        generate_ism(mp4_local_paths)
+
+        # 4. Process the group of MP4 files
         process_single_key_group(group_df)
 
 if __name__ == "__main__":
