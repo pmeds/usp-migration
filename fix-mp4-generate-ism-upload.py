@@ -144,7 +144,7 @@ def upload_mp4_to_linode_boto3(file_key, local_path):
     print(f"Trying to upload {file_key} {local_path}")
     try:
         with open(local_path, 'rb') as file:
-            upload_client.upload_fileobj(file, UPLOAD_BUCKET_NAME, file_key)
+            upload_client.upload_fileobj(file, UPLOAD_BUCKET_NAME, file_key, ExtraArgs={'ACL': 'authenticated-read'})
         logging.info(f"Successfully uploaded {local_path} to {file_key}")
     except Exception as e:
         logging.error(f"Error uploading {local_path}. Reason: {e}")
@@ -168,7 +168,7 @@ def upload_to_linode(file_key, local_path):
     print(file_key)
     if os.path.exists(local_path):
         try:
-            upload_client.upload_file(local_path, UPLOAD_BUCKET_NAME, file_key)
+            upload_client.upload_file(local_path, UPLOAD_BUCKET_NAME, file_key, ExtraArgs={'ACL': 'authenticated-read'})
             logging.info(f"Successfully uploaded {local_path} to {file_key}")
         except Exception as e:
             logging.error(f"Error uploading {local_path}. Reason: {e}")
@@ -214,12 +214,12 @@ def process_single_key_group(group_df, s3_upload_path):
         
 
         # Extract the file name from the local path
-        clean_file_name = os.path.basename(input_file_path)
+        clean_file_name = os.path.basename(output_file_path)
         # Generate the correct upload path for Linode
-        linode_upload_path = generate_mp4_upload_path(input_file_path, s3_upload_path)
+        linode_upload_path = generate_mp4_upload_path(output_file_path, s3_upload_path)
         print(linode_upload_path) 
         # Upload the file
-        upload_mp4_to_linode_boto3(linode_upload_path, input_file_path)
+        upload_mp4_to_linode_boto3(linode_upload_path, output_file_path)
         
     
 
