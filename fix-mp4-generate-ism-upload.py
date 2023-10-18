@@ -18,12 +18,12 @@ GOOD_MP4_DIR = "/home/admin/scripts/mp4s/good-mp4s"
 ISM_OUTPUT_DIR = "/home/admin/scripts/ism/output"
 LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
 BASE_URL = "https://webmd-a.akamaihd.net/delivery/"
-UPLOAD_BUCKET_NAME = "webmd-usp-poc-content-1"
+UPLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
 BASE_PATH = "delivery/"
 
 upload_session = boto3.Session(
-    aws_access_key_id=os.environ['POC_S3_ACCESS_KEY'],
-    aws_secret_access_key=os.environ['POC_S3_SECRET_KEY']
+    aws_access_key_id=os.environ['S3_ACCESS_KEY'],
+    aws_secret_access_key=os.environ['S3_SECRET_KEY']
 )
 upload_client = upload_session.client('s3', region_name='us-ord-1', endpoint_url='https://us-ord-1.linodeobjects.com')
 
