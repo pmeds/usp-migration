@@ -198,9 +198,9 @@ def process_single_key_group(group_df, s3_upload_path):
         output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
         run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
         # Add BASE_PATH to s3_upload_path
-        mp4_linode_upload_path = os.path.join(BASE_PATH, s3_upload_path) 
+        mp4_linode_upload_path = os.path.join(BASE_PATH, s3_upload_path, os.path.basename(output_file_path)) 
         # Upload MP4 files to Linode using the S3 upload path
-        upload_mp4_to_linode_boto3(os.path.join(mp4_linode_upload_path, os.path.basename(input_file_path)), input_file_path)
+        upload_mp4_to_linode_boto3(mp4_linode_upload_path, input_file_path)
 
     # Generate ISM after mp4split
     generate_ism(mp4_local_paths)
@@ -222,7 +222,7 @@ def process_single_key_group(group_df, s3_upload_path):
         upload_to_linode(upload_path, os.path.join(ISM_OUTPUT_DIR, ism_filename))
 
     # Cleanup
-    #clean_directory(MP4_DIR)
+    clean_directory(MP4_DIR)
 
 
 def main():
