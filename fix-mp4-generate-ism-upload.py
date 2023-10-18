@@ -84,8 +84,6 @@ def run_mp4split(input_file_path, output_file_path, license_key_path):
         subprocess.run(mp4split_command, check=True)
         logging.info(f"mp4split successful for: {os.path.basename(input_file_path)}")
         print(f"mp4split successful for: {os.path.basename(input_file_path)}")
-        print(f"uploading for: {os.path.basename(output_file_path)}")
-        upload_mp4_to_linode_boto3(output_file_path, os.path.basename(output_file_path))
     except subprocess.CalledProcessError as e:
         logging.error(f"mp4split failed for: {os.path.basename(input_file_path)}, Error: {e}")
 
@@ -151,6 +149,20 @@ def upload_mp4_to_linode_boto3(file_key, local_path):
     except Exception as e:
         logging.error(f"Error uploading {local_path}. Reason: {e}")
 
+
+def generate_mp4_upload_path(local_file_path, s3_upload_path):
+    """
+    Generate the correct upload path for Linode based on the local_file_path and the s3_upload_path.
+    """
+    clean_file_name = os.path.basename(local_file_path)  # Extract the file name from the local path
+    # Remove the file name from the s3_upload_path
+    s3_directory_path = os.path.dirname(s3_upload_path)
+    # Construct the new upload path by appending the clean_file_name
+    linode_upload_path = os.path.join(BASE_PATH, s3_directory_path, clean_file_name)
+    return linode_upload_path
+
+
+
 def upload_to_linode(file_key, local_path):
     #print(local_path)
     print(file_key)
@@ -198,9 +210,18 @@ def process_single_key_group(group_df, s3_upload_path):
         output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
         run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
         # Add BASE_PATH to s3_upload_path
-        mp4_linode_upload_path = os.path.join(BASE_PATH, s3_upload_path, os.path.basename(output_file_path)) 
-        # Upload MP4 files to Linode using the S3 upload path
-        upload_mp4_to_linode_boto3(mp4_linode_upload_path, input_file_path)
+        #mp4_linode_upload_path = os.path.join(BASE_PATH, s3_upload_path, output_file_path) 
+        
+
+        # Extract the file name from the local path
+        clean_file_name = os.path.basename(input_file_path)
+        # Generate the correct upload path for Linode
+        linode_upload_path = generate_mp4_upload_path(input_file_path, s3_upload_path)
+        print(linode_upload_path) 
+        # Upload the file
+        upload_mp4_to_linode_boto3(linode_upload_path, input_file_path)
+        
+    
 
     # Generate ISM after mp4split
     generate_ism(mp4_local_paths)
@@ -222,11 +243,11 @@ def process_single_key_group(group_df, s3_upload_path):
         upload_to_linode(upload_path, os.path.join(ISM_OUTPUT_DIR, ism_filename))
 
     # Cleanup
-    clean_directory(MP4_DIR)
+    #clean_directory(MP4_DIR)
 
 
 def main():
-    json_file = "partial-missing-mp4s.json"
+    json_file = "mising-mp4s.json"
     csv_path = create_csv_from_json(json_file)
 
     df = pd.read_csv(csv_path)
@@ -238,12 +259,12 @@ def main():
     for key in unique_keys:
         group_df = df[df['key'] == key]
 
-        # Extract the S3 upload path from the first row in the group
-        s3_upload_path = extract_upload_path(group_df.iloc[0])
 
         # 1. Download MP4 files from Akamai
         mp4_local_paths = []
         for _, row in group_df.iterrows():
+            # Update s3_upload_path for each row (mp4 file)
+            s3_upload_path = extract_upload_path(row)
             local_path = os.path.join(MP4_DIR, os.path.basename(row['Path']))
             download_from_akamai(row['Path'], local_path)
             mp4_local_paths.append(local_path)
