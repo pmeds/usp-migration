@@ -19,6 +19,7 @@ ISM_OUTPUT_DIR = "/home/admin/scripts/ism/output"
 LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
 BASE_URL = "https://webmd-a.akamaihd.net/delivery/"
 UPLOAD_BUCKET_NAME = "webmd-usp-poc-content-1"
+BASE_PATH = "delivery/"
 
 upload_session = boto3.Session(
     aws_access_key_id=os.environ['POC_S3_ACCESS_KEY'],
@@ -139,7 +140,7 @@ def modify_ism_to_relative_path(ism_filename):
 
 def generate_upload_path(mp4_path, ism_filename):
     dir_path = os.path.dirname(mp4_path)
-    return os.path.join(dir_path, ism_filename)
+    return os.path.join(BASE_PATH, dir_path, ism_filename)
 
 def upload_mp4_to_linode_boto3(file_key, local_path):
     print(f"Trying to upload {file_key} {local_path}")
@@ -196,8 +197,10 @@ def process_single_key_group(group_df):
     for input_file_path in mp4_local_paths:
         output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
         run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
-        # Upload MP4 files ] to Linode using the S3 upload path
-        upload_mp4_to_linode_boto3(os.path.join(s3_upload_path, os.path.basename(input_file_path)), input_file_path)
+        # Add BASE_PATH to s3_upload_path
+        mp4_linode_upload_path = os.path.join(BASE_PATH, s3_upload_path) 
+        # Upload MP4 files to Linode using the S3 upload path
+        upload_mp4_to_linode_boto3(os.path.join(mp4_linode_upload_path, os.path.basename(input_file_path)), input_file_path)
 
     # Generate ISM after mp4split
     generate_ism(mp4_local_paths)
