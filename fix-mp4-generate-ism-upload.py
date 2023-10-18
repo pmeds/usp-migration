@@ -174,7 +174,7 @@ def get_key_from_mp4_path(path):
     """
     return re.sub(r"_.*\.mp4$", "", path)
 
-def process_single_key_group(group_df):
+def process_single_key_group(group_df, s3_upload_path):
     """
     Process a group of rows from the CSV that share the same key.
     """
