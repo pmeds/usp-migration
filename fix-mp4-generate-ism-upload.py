@@ -21,6 +21,7 @@ BASE_URL = "https://webmd-a.akamaihd.net/delivery/"
 UPLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
 BASE_PATH = "delivery/"
 
+# Create session to upload content to linode bucket prod-webmd-usp-content-1
 upload_session = boto3.Session(
     aws_access_key_id=os.environ['S3_ACCESS_KEY'],
     aws_secret_access_key=os.environ['S3_SECRET_KEY']
@@ -32,6 +33,7 @@ def extract_upload_path(csv_row):
     # Assuming that 'Path' in the CSV contains the full S3 path
     return csv_row['Path']
 
+# Function to encode and reencode the URLs to avoid having issues when generating the Object Store authorization headers
 def decode_and_reencode_filename(url):
     # Split the URL to get the path
     path = urllib.parse.urlparse(url).path
@@ -44,6 +46,7 @@ def decode_and_reencode_filename(url):
     # Return the new URL with the directory and re-encoded filename
     return os.path.join(directory, encoded_filename)
 
+# Function to create the csv file from th json file
 def create_csv_from_json(json_file):
     with open(json_file, 'r') as f:
         data = json.load(f)
@@ -53,6 +56,7 @@ def create_csv_from_json(json_file):
         df.to_csv(csv_path, index=False)
         return csv_path
 
+# function to download content from netstorage
 def download_from_akamai(file_key, local_path):
     encoded_file_key = decode_and_reencode_filename(file_key)
     full_url = BASE_URL + encoded_file_key
@@ -68,6 +72,7 @@ def download_from_akamai(file_key, local_path):
     except Exception as e:
         logging.error(f"Error downloading {file_key}. Reason: {e}")
 
+# Function to extract the mp4 filename
 def generate_ism_filename_from_mp4(mp4_filename):
     # Use regex to match everything up to the last underscore
     match = re.match(r"^(.*)_.*\.mp4$", mp4_filename)
@@ -76,6 +81,7 @@ def generate_ism_filename_from_mp4(mp4_filename):
         return f"{base_name}.ism"
     return None
 
+# Function to repackage the mp4s that were donwloaded previously
 def run_mp4split(input_file_path, output_file_path, license_key_path):
     #print(input_file_path)
     #print(output_file_path)
@@ -87,6 +93,7 @@ def run_mp4split(input_file_path, output_file_path, license_key_path):
     except subprocess.CalledProcessError as e:
         logging.error(f"mp4split failed for: {os.path.basename(input_file_path)}, Error: {e}")
 
+# Function to generate the ism file using the mp4s stored in GOOD_MP4_DIR
 def generate_ism(mp4_local_paths):
     # Extract the ISM filename from the first MP4 name
     ism_filename = generate_ism_filename_from_mp4(os.path.basename(mp4_local_paths[0]))
@@ -107,6 +114,9 @@ def generate_ism(mp4_local_paths):
         logging.error(f"ISM generation failed for {mp4_local_paths[0]}")
         return False
 
+# Function to modify the generated ism file. The ism file will grab the path that is used from the output and will make it the path when the url is being called. This
+# To avoid this from happening the ism file has to be modified so it only includes the file name as a relative path. As long as the mp4s are stored in object store 
+# within the same directory this will work
 def modify_ism_to_relative_path(ism_filename):
     ism_file_path = os.path.join(ISM_OUTPUT_DIR, ism_filename)
     tree = ET.parse(ism_file_path)
@@ -135,11 +145,12 @@ def modify_ism_to_relative_path(ism_filename):
 
     tree.write(ism_file_path, xml_declaration=True)
 
-
+# Function to generate the ism upload path
 def generate_upload_path(mp4_path, ism_filename):
     dir_path = os.path.dirname(mp4_path)
     return os.path.join(BASE_PATH, dir_path, ism_filename)
 
+# Function to upload the mp4 files to linode
 def upload_mp4_to_linode_boto3(file_key, local_path):
     print(f"Trying to upload {file_key} {local_path}")
     try:
@@ -149,7 +160,7 @@ def upload_mp4_to_linode_boto3(file_key, local_path):
     except Exception as e:
         logging.error(f"Error uploading {local_path}. Reason: {e}")
 
-
+# Function to generate the mp4 upload path
 def generate_mp4_upload_path(local_file_path, s3_upload_path):
     """
     Generate the correct upload path for Linode based on the local_file_path and the s3_upload_path.
@@ -161,8 +172,7 @@ def generate_mp4_upload_path(local_file_path, s3_upload_path):
     linode_upload_path = os.path.join(BASE_PATH, s3_directory_path, clean_file_name)
     return linode_upload_path
 
-
-
+# Function to upload the ism file to linode
 def upload_to_linode(file_key, local_path):
     #print(local_path)
     print(file_key)
@@ -174,7 +184,8 @@ def upload_to_linode(file_key, local_path):
             logging.error(f"Error uploading {local_path}. Reason: {e}")
     else:
         logging.error(f"upload_to_linode_ File not found: {local_path}")
-        
+
+# Function to delete the mp4 files 
 def clean_directory(directory_path):
     print("Cleaning good-mp4s directory")
     for filename in os.listdir(directory_path):
