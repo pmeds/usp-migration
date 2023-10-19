@@ -191,12 +191,14 @@ def clean_directory(directory_path):
     for filename in os.listdir(directory_path):
         os.remove(os.path.join(directory_path, filename))
 
+# Function to generate the key to group all files
 def get_key_from_mp4_path(path):
     """
     Derive the key from the mp4 path by stripping everything after the last underscore
     """
     return re.sub(r"_.*\.mp4$", "", path)
 
+# Function to proces one key at a time
 def process_single_key_group(group_df, s3_upload_path):
     """
     Process a group of rows from the CSV that share the same key.
@@ -253,8 +255,8 @@ def process_single_key_group(group_df, s3_upload_path):
         upload_path = generate_upload_path(first_mp4_path, ism_filename)  # Derive the upload path
         upload_to_linode(upload_path, os.path.join(ISM_OUTPUT_DIR, ism_filename))
 
-    # Cleanup
-    #clean_directory(MP4_DIR)
+    # Cleanup. Remove the old mp4s.
+    clean_directory(MP4_DIR)
 
 
 def main():
@@ -285,10 +287,7 @@ def main():
             output_file_path = os.path.join(GOOD_MP4_DIR, os.path.basename(input_file_path))
             run_mp4split(input_file_path, output_file_path, LICENSE_KEY_PATH)
 
-        # 3. Generate ISM after mp4split
-        #generate_ism(mp4_local_paths)
-
-        # 4. Process the group of MP4 files
+        # 3. Process the group of MP4 files
         process_single_key_group(group_df, s3_upload_path)
 
 if __name__ == "__main__":
