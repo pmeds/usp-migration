@@ -97,7 +97,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     license_key_path = "/home/admin/scripts/mp4s/usp-license.key"
-    linode_remote = "webmd-prod-chicago:prod-webmd-usp-content-1/delivery/"
+    linode_remote = "your-bucket-prod-chicago:prod-your-bucket-usp-content-1/delivery/"
 
     if args.generate_csvs:
         json_file_name = "missing_files_linode.json"
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         if args.start is None or args.end is None:
             print("Error: Both --start and --end arguments are required for processing CSVs.")
         else:
-            base_url = "https://webmd-a.akamaihd.net/delivery/"
+            base_url = "https://your-host-a.akamaihd.net/delivery/"
             smaller_csv_files = sorted([f for f in os.listdir("missing_smaller_csvs") if f.endswith('.csv')])
             download_dir = "bad-mp4s"
             os.makedirs(download_dir, exist_ok=True)
