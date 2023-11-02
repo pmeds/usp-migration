@@ -10,7 +10,7 @@ JSON_FILE = 'all_files_linode.json'
 LOG_FILE = 'error_log.json'
 BASE_URL = 'http://us-ord-1.linodeobjects.com'  # Add your base URL here
 MAX_WORKERS = 40  # You can adjust this number based on your server's capabilities and requirements
-BUCKET_NAME = 'prod-webmd-usp-content-1'
+BUCKET_NAME = 'bucket-content-1'
 
 
 # AWS Configuration
