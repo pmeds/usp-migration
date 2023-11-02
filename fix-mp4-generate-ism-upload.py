@@ -21,7 +21,7 @@ BASE_URL = "https://your-hostname.com/delivery/"
 UPLOAD_BUCKET_NAME = "your-bucket-usp-content-1"
 BASE_PATH = "base_path/"
 
-# Create session to upload content to linode bucket prod-webmd-usp-content-1
+# Create session to upload content to linode bucket your-bucket-usp-content-1
 upload_session = boto3.Session(
     aws_access_key_id=os.environ['S3_ACCESS_KEY'],
     aws_secret_access_key=os.environ['S3_SECRET_KEY']
