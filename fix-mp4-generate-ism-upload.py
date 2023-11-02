@@ -17,9 +17,9 @@ MP4_DIR = "/home/admin/scripts/mp4s/bad-mp4s"
 GOOD_MP4_DIR = "/home/admin/scripts/mp4s/good-mp4s"
 ISM_OUTPUT_DIR = "/home/admin/scripts/ism/output"
 LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
-BASE_URL = "https://webmd-a.akamaihd.net/delivery/"
-UPLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
-BASE_PATH = "delivery/"
+BASE_URL = "https://your-hostname.com/delivery/"
+UPLOAD_BUCKET_NAME = "your-bucket-usp-content-1"
+BASE_PATH = "base_path/"
 
 # Create session to upload content to linode bucket prod-webmd-usp-content-1
 upload_session = boto3.Session(
