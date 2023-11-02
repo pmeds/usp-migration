@@ -17,8 +17,8 @@ logging.basicConfig(filename='process_logs.log', level=logging.INFO, format='%(a
 MP4_DIR = "/home/admin/scripts/mp4s/good-mp4s"
 ISM_OUTPUT_DIR = "/home/admin/scripts/ism/output"
 LICENSE_KEY_PATH = "/home/admin/scripts/mp4s/usp-license.key"
-UPLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
-DOWNLOAD_BUCKET_NAME = "prod-webmd-usp-content-1"
+UPLOAD_BUCKET_NAME = "prod-your-bucket-usp-content-1"
+DOWNLOAD_BUCKET_NAME = "prod-your-bucket-usp-content-1"
 
 # Configure boto3 for Linode Object Storage
 download_session = boto3.Session(
